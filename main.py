@@ -1,14 +1,14 @@
+import json
 import os
+import tempfile
 import threading
 import wave
 
-import json
 import openai
 import pyaudio
 import replicate
 import requests
 import simpleaudio
-import tempfile
 from dotenv import load_dotenv
 from pynput import keyboard
 
@@ -40,7 +40,7 @@ def speak(text: str):
 
     params = (
         ("text", text),
-        ("speaker", 3)
+        ("speaker", 4),
     )
 
     response1 = requests.post(
@@ -48,11 +48,14 @@ def speak(text: str):
         params=params
     )
 
+    synthesis_payload = response1.json()
+    synthesis_payload["speedScale"] = 1.3
+
     response2 = requests.post(
         f"http://{host}:{port}/synthesis",
         headers={"Content-Type": "application/json"},
         params=params,
-        data=json.dumps(response1.json())
+        data=json.dumps(synthesis_payload)
     )
 
     with tempfile.TemporaryDirectory() as tmp:
