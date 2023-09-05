@@ -2,8 +2,19 @@ import threading
 import wave
 
 import pyaudio
+import replicate
+from dotenv import load_dotenv
 from pynput import keyboard
 
+load_dotenv()
+
+def whisper(file):
+    output = replicate.run(
+        "openai/whisper:91ee9c0c3df30478510ff8c8a3a545add1ad0259ad3a9f78fba57fbc05ee64f7",
+        input={"audio": open(file, "rb")}
+    )
+    print(output["transcription"])
+    return output["transcription"]
 
 class AKeyListener:
     def __init__(self):
@@ -18,7 +29,6 @@ class AKeyListener:
         self.recording = True
         self.frames = []
 
-        # Recording in a separate thread
         record_thread = threading.Thread(target=self.record_loop)
         record_thread.start()
 
@@ -52,6 +62,7 @@ class AKeyListener:
                 self.key_pressed = False
                 print("Aキーを離しました")
                 self.stop_recording()
+                whisper("./output.wav")
         except AttributeError:
             pass
 
