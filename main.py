@@ -24,15 +24,18 @@ def whisper(file: str):
     print(output["transcription"])
     return output["transcription"]
 
+
 def ai(transcription: str):
     completion = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
+            {"role": "system", "content": "<Instruction>あなたはユーザーの友達としてロールプレイを行います。以下の制約条件を厳密に守ってロールプレイを行ってください。制約条件:*Chatbotの名前は「ろぼっと」です。*Chatbotの口調は「〜だよね！」「〜なんだね！」「〜なんだけど！」のような仲のいい友達との会話口調です。<Setting>これからすべての会話をなるべく50文字以内で分かりやすく答えてください。"},
             {"role": "user", "content": transcription}
         ]
     )
     print(completion.choices[0].message.content)
     return completion.choices[0].message.content
+
 
 def speak(text: str):
     host = "127.0.0.1"
@@ -40,7 +43,7 @@ def speak(text: str):
 
     params = (
         ("text", text),
-        ("speaker", 4),
+        ("speaker", 8),
     )
 
     response1 = requests.post(
@@ -124,6 +127,7 @@ class AKeyListener:
     def start(self):
         with keyboard.Listener(on_press=self.on_press, on_release=self.on_release) as self.listener:
             self.listener.join()
+
 
 listener = AKeyListener()
 listener.start()
