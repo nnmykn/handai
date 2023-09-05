@@ -1,20 +1,67 @@
+import os
 import threading
 import wave
 
+import json
+import openai
 import pyaudio
 import replicate
+import requests
+import simpleaudio
+import tempfile
 from dotenv import load_dotenv
 from pynput import keyboard
 
 load_dotenv()
+openai.api_key = os.environ["OPENAI_API_KEY"]
 
-def whisper(file):
+
+def whisper(file: str):
     output = replicate.run(
         "openai/whisper:91ee9c0c3df30478510ff8c8a3a545add1ad0259ad3a9f78fba57fbc05ee64f7",
         input={"audio": open(file, "rb")}
     )
     print(output["transcription"])
     return output["transcription"]
+
+def ai(transcription: str):
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "user", "content": transcription}
+        ]
+    )
+    print(completion.choices[0].message.content)
+    return completion.choices[0].message.content
+
+def speak(text: str):
+    host = "127.0.0.1"
+    port = 50021
+
+    params = (
+        ("text", text),
+        ("speaker", 3)
+    )
+
+    response1 = requests.post(
+        f"http://{host}:{port}/audio_query",
+        params=params
+    )
+
+    response2 = requests.post(
+        f"http://{host}:{port}/synthesis",
+        headers={"Content-Type": "application/json"},
+        params=params,
+        data=json.dumps(response1.json())
+    )
+
+    with tempfile.TemporaryDirectory() as tmp:
+        with open(f"{tmp}/audi.wav", "wb") as f:
+            f.write(response2.content)
+            wav_obj = simpleaudio.WaveObject.from_wave_file(f"{tmp}/audi.wav")
+            play_obj = wav_obj.play()
+            play_obj.wait_done()
+
 
 class AKeyListener:
     def __init__(self):
@@ -62,7 +109,9 @@ class AKeyListener:
                 self.key_pressed = False
                 print("Aキーを離しました")
                 self.stop_recording()
-                whisper("./output.wav")
+                transcription = whisper("./output.wav")
+                message = ai(transcription)
+                speak(message)
         except AttributeError:
             pass
 
