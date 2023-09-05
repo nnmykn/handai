@@ -1,3 +1,4 @@
+import threading
 import wave
 
 import pyaudio
@@ -16,8 +17,14 @@ class AKeyListener:
         print("録音を開始します")
         self.recording = True
         self.frames = []
+
+        # Recording in a separate thread
+        record_thread = threading.Thread(target=self.record_loop)
+        record_thread.start()
+
+    def record_loop(self):
         while self.recording:
-            data = self.stream.read(1024)
+            data = self.stream.read(1024, exception_on_overflow=False)
             self.frames.append(data)
 
     def stop_recording(self):
